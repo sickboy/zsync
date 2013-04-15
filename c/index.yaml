@@ -1,0 +1,4 @@
+default:
+  name: zsync
+  version: 0.6.2
+  summary: 'http based rsync style file fetching with precomputed checksums'
