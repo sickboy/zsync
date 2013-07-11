@@ -4,7 +4,7 @@ compiler:
 #  - clang
 before_install:
   - sudo apt-get update -qq
-  - sudo apt-get install -qq libcurl4 libcurl4-dev
+  - sudo apt-get install -qq libcurl4-openssl-dev
 script: cd c && ./configure && make
 
 notifications:
