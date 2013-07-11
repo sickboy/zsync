@@ -9,4 +9,4 @@ script: cd c && ./doit.sh
 
 notifications:
   irc: "irc.freenode.net#eam"
-
+  email: false
