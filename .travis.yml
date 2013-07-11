@@ -7,7 +7,6 @@ before_install:
   - sudo apt-get install -qq libcurl4 libcurl4-dev
 script: cd c && ./configure && make
 
-
 notifications:
   irc: "irc.freenode.net#eam"
 
