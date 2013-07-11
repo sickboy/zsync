@@ -5,7 +5,7 @@ compiler:
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq libcurl4-openssl-dev
-script: cd c && ./doit.sh
+script: cd c && ./doit.sh && ./testit.sh
 
 notifications:
   irc: "irc.freenode.net#eam"
