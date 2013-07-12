@@ -8,5 +8,5 @@ before_install:
 script: cd c && ./doit.sh && ./testit.sh
 
 notifications:
-  irc: "irc.freenode.net#eam"
+  irc: "irc.freenode.net#range"
   email: false
