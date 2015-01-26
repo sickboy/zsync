@@ -147,6 +147,10 @@ CURL *make_curl_handle() {
     /* Turn on SO_KEEPALIVE */
     curl_easy_setopt( curl, CURLOPT_SOCKOPTFUNCTION, range_fetch_sockoptcallback );
 
+	// Abort transfers if speed is below 100 bytes/s, for longer than 1.5m
+	curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, 100);
+	curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, 90);
+
     /* Command line options */
 
     if(be_verbose) {
