@@ -571,8 +571,10 @@ int main(int argc, char **argv) {
     }
 
     /* No progress display except on terminal */
-    if (!isatty(0))
-        no_progress = 1;
+
+	// PR: Disabled so we can get the output from external apps - use -q to override!
+	/*if (!isatty(0))
+	no_progress = 1;*/
 
     /* Respect ZSYNC_CA_BUNDLE environment variable */
     if( !cacert ) {
