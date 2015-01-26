@@ -483,15 +483,8 @@ int main(int argc, char **argv) {
                         exit(1);
                     }
                     else {
-                        /* XXX - HTTP Auth not working right now */
-                        fprintf(stderr,
-                               "HTTP Authentication is not supported in this version\n");
-                        exit(1);
-
-                        /*
                         *q++ = *r++ = 0;
                         add_auth(p, q, r);
-                        */
                     }
                 }
                 break;

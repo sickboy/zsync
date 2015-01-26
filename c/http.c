@@ -90,6 +90,30 @@ void add_auth(char *host, char *user, char *pass) {
     num_auth_details++;
 }
 
+
+
+static char *get_auth_hdr(const char *hn) {
+	/* Find any relevant entry in the auth table */
+	int i;
+	for (i = 0; i < num_auth_details * 3; i += 3) {
+		if (!strcasecmp(auth_details[i], hn)) {
+			char *b;
+
+			/* We have found an entry in the auth details table for this
+			* hostname; get the user & pass to use */
+			char *u = auth_details[i + 1];
+			char *p = auth_details[i + 2];
+
+			/* Store unencoded user:pass */
+			size_t l = strlen(u) + strlen(p) + 2;
+			char *w = malloc(l);
+			snprintf(w, l, "%s:%s", u, p);
+			return w;
+		}
+	}
+	return NULL;
+}
+
 /* Get a curl easy handle based on our global options. Returns NULL on failure */
 CURL *make_curl_handle() {
     CURL *curl;
@@ -219,6 +243,10 @@ FILE *http_get(const char *orig_url, char **track_referer, const char *tfname) {
     CURLcode res;
     long response_code;
     char *effective_url;
+	char *authhdr = NULL;
+	char* p;
+	char *port;
+	char hostn[256];
 
     /* We're either downloading to a file on disk (-k option) or a tmpfile */
     f = tfname ? fopen(tfname, "w+") : tmpfile();
@@ -236,6 +264,11 @@ FILE *http_get(const char *orig_url, char **track_referer, const char *tfname) {
 
     curl_easy_setopt( curl, CURLOPT_URL, orig_url );
     curl_easy_setopt( curl, CURLOPT_WRITEDATA, f );
+
+	get_http_host_port(orig_url, hostn, sizeof(hostn), &port);
+	authhdr = get_auth_hdr(hostn);
+	if (authhdr)
+		curl_easy_setopt( curl, CURLOPT_USERPWD, authhdr );
 
     /* Try URL fetch */
     res = curl_easy_perform( curl );
@@ -754,6 +787,10 @@ int range_fetch_perform(struct range_fetch *rf, struct myprogress *prog) {
     CURLcode res;
     int max_range_per_request = 20;
     char request[1024] = { 0 }; /* Range like "X-Y,N-M" */
+	char *authhdr = NULL;
+	char* p;
+	char *port;
+	char hostn[256];
 
     /* Reset per-request state in range_fetch */
     rf->block_left = 0;
@@ -815,6 +852,11 @@ int range_fetch_perform(struct range_fetch *rf, struct myprogress *prog) {
 	curl_easy_setopt( rf->curl, CURLOPT_NOPROGRESS, 0L);
 	curl_easy_setopt(rf->curl, CURLOPT_XFERINFOFUNCTION, xferinfo);
 	curl_easy_setopt(rf->curl, CURLOPT_XFERINFODATA, prog);
+
+	get_http_host_port(rf->url, hostn, sizeof(hostn), &port);
+	authhdr = get_auth_hdr(hostn);
+	if (authhdr)
+		curl_easy_setopt( rf->curl, CURLOPT_USERPWD, authhdr);
 
 	res = curl_easy_perform( rf->curl );
 
