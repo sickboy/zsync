@@ -34,13 +34,9 @@ struct range_fetch;
 
 
 struct myprogress {
-	double lastruntime;
-	CURL *curl;
 	struct zsync_state *z;
 	struct progress *p;
 };
-
-
 
 struct range_fetch* range_fetch_start(const char* orig_url, struct zsync_receiver* zr);
 void range_fetch_addranges(struct range_fetch* rf, off_t* ranges, int nranges);

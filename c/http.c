@@ -245,6 +245,7 @@ int parse_content_range( char *buf, size_t len, off_t *from, off_t *to ) {
     }
 }
 
+
 /* Download content from orig_url into the file tfname (or tmpfile, if tfname
  * is NULL), and return corresponding FILE*, or NULL on failure. Optionally
  * store last used URL, after redirects, into track_referer.
@@ -262,7 +263,6 @@ FILE *http_get(const char *orig_url, char **track_referer, const char *tfname) {
     long response_code;
     char *effective_url;
 	char *authhdr = NULL;
-	char* p;
 	char *port;
 	char hostn[256];
 
@@ -288,9 +288,21 @@ FILE *http_get(const char *orig_url, char **track_referer, const char *tfname) {
 	if (authhdr)
 		curl_easy_setopt( curl, CURLOPT_USERPWD, authhdr );
 
+	struct progress p = { 0, 0, 0, 0 };
+
+	if (!no_progress) {
+		do_progress(&p, 0, 0);
+
+		curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
+		curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, xferinfo2);
+		curl_easy_setopt(curl, CURLOPT_XFERINFODATA, p);
+	}
+
     /* Try URL fetch */
     res = curl_easy_perform( curl );
     if (res) {
+		if (!no_progress)
+			end_progress(&p, feof(f) ? 2 : 0);
         fprintf(stderr, "Curl: %s\n", curl_easy_strerror(res));
         fclose(f);
         curl_easy_cleanup(curl);
@@ -861,9 +873,6 @@ int range_fetch_perform(struct range_fetch *rf, struct myprogress *prog) {
         /* Nothing to do. Done! */
         return 0;
     }
-	prog->lastruntime = 0;
-	prog->curl = rf->curl;
-
     /* Need to ask curl to send these ranges */
     curl_easy_setopt( rf->curl, CURLOPT_RANGE, NULL );
     curl_easy_setopt( rf->curl, CURLOPT_RANGE, &request );

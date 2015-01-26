@@ -24,6 +24,11 @@ int xferinfo(void *p,
 	curl_off_t dltotal, curl_off_t dlnow,
 	curl_off_t ultotal, curl_off_t ulnow);
 
+int xferinfo2(void *p,
+	curl_off_t dltotal, curl_off_t dlnow,
+	curl_off_t ultotal, curl_off_t ulnow);
+
+
 /* zsync_begin - load a zsync file and return data structure to use for the rest of the process.
  */
 struct zsync_state* zsync_begin(FILE* cf);
