@@ -16,7 +16,13 @@
 #ifndef ZSYNC_ZSYNC_H
 #define ZSYNC_ZSYNC_H
 
+#include <curl/curl.h>
+
 struct zsync_state;
+
+int xferinfo(void *p,
+	curl_off_t dltotal, curl_off_t dlnow,
+	curl_off_t ultotal, curl_off_t ulnow);
 
 /* zsync_begin - load a zsync file and return data structure to use for the rest of the process.
  */

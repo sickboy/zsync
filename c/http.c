@@ -39,6 +39,8 @@
 # include <dmalloc.h>
 #endif
 
+#include "libzsync/zsync.h"
+
 #include "http.h"
 #include "url.h"
 #include "progress.h"
@@ -748,7 +750,7 @@ void range_fetch_end(struct range_fetch *rf) {
  *  0 = No more work to do
  * -1 = error
  */
-int range_fetch_perform(struct range_fetch *rf) {
+int range_fetch_perform(struct range_fetch *rf, struct myprogress *prog) {
     CURLcode res;
     int max_range_per_request = 20;
     char request[1024] = { 0 }; /* Range like "X-Y,N-M" */
@@ -804,11 +806,17 @@ int range_fetch_perform(struct range_fetch *rf) {
         /* Nothing to do. Done! */
         return 0;
     }
+	prog->lastruntime = 0;
+	prog->curl = rf->curl;
 
     /* Need to ask curl to send these ranges */
     curl_easy_setopt( rf->curl, CURLOPT_RANGE, NULL );
     curl_easy_setopt( rf->curl, CURLOPT_RANGE, &request );
-    res = curl_easy_perform( rf->curl );
+	curl_easy_setopt( rf->curl, CURLOPT_NOPROGRESS, 0L);
+	curl_easy_setopt(rf->curl, CURLOPT_XFERINFOFUNCTION, xferinfo);
+	curl_easy_setopt(rf->curl, CURLOPT_XFERINFODATA, prog);
+
+	res = curl_easy_perform( rf->curl );
 
     /* Get rid of CURLOPT_RANGE, since the pointer will be invalid shortly. */
     curl_easy_setopt( rf->curl, CURLOPT_RANGE, NULL );
