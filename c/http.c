@@ -295,15 +295,15 @@ FILE *http_get(const char *orig_url, char **track_referer, const char *tfname) {
 
 		curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
 		curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, xferinfo2);
-		curl_easy_setopt(curl, CURLOPT_XFERINFODATA, p);
+		curl_easy_setopt(curl, CURLOPT_XFERINFODATA, &p);
 	}
 
     /* Try URL fetch */
     res = curl_easy_perform( curl );
     if (res) {
-		if (!no_progress)
-			end_progress(&p, feof(f) ? 2 : 0);
         fprintf(stderr, "Curl: %s\n", curl_easy_strerror(res));
+		if (!no_progress)
+			end_progress(&p, 0);
         fclose(f);
         curl_easy_cleanup(curl);
         return NULL;
@@ -313,14 +313,18 @@ FILE *http_get(const char *orig_url, char **track_referer, const char *tfname) {
     res = curl_easy_getinfo( curl, CURLINFO_RESPONSE_CODE, &response_code );
     if (res != CURLE_OK) {
         fprintf(stderr, "Could not get HTTP response code!\n");
-        fclose(f);
+		if (!no_progress)
+			end_progress(&p, 0);
+		fclose(f);
         curl_easy_cleanup(curl);
         return NULL;
     }
 
     if (response_code != 200) {
         fprintf(stderr, "Got HTTP %ld (expected 200)\n", response_code);
-        fclose(f);
+		if (!no_progress)
+			end_progress(&p, 0);
+		fclose(f);
         curl_easy_cleanup(curl);
         return NULL;
     }
@@ -330,6 +334,8 @@ FILE *http_get(const char *orig_url, char **track_referer, const char *tfname) {
         res = curl_easy_getinfo( curl, CURLINFO_EFFECTIVE_URL, &effective_url );
         if(res != CURLE_OK) {
             fprintf(stderr, "Could not get last effective URL: %s\n", curl_easy_strerror(res));
+			if (!no_progress)
+				end_progress(&p, 0);
             fclose(f);
             curl_easy_cleanup(curl);
             return NULL;
@@ -340,6 +346,9 @@ FILE *http_get(const char *orig_url, char **track_referer, const char *tfname) {
 
     /* Done with the curl handle */
     curl_easy_cleanup( curl );
+
+	if (!no_progress)
+		end_progress(&p, 2);
 
     /* The caller expects f to be at the beginning */
     rewind(f);
