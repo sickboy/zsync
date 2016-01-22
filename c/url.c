@@ -4,8 +4,8 @@
  *   Copyright (C) 2004,2005,2009 Colin Phipps <cph@moria.org.uk>
  *
  *   This program is free software; you can redistribute it and/or modify
- *   it under the terms of the Artistic License v2 (see the accompanying 
- *   file COPYING for the full license terms), or, at your option, any later 
+ *   it under the terms of the Artistic License v2 (see the accompanying
+ *   file COPYING for the full license terms), or, at your option, any later
  *   version of the same license.
  *
  *   This program is distributed in the hope that it will be useful,
@@ -28,7 +28,6 @@
 #include "url.h"
 
 const char http_scheme[] = { "http://" };
-// TODO
 const char https_scheme[] = { "https://" };
 
 /* path_str = get_http_host_port(url_str, &host, host_len, &port_str)
@@ -42,10 +41,15 @@ char *get_http_host_port(const char *url, char *hostn, int hnlen, char **port) {
 	char *p, *q;
 
 	/* Check it's HTTP */
-	if (memcmp(url, http_scheme, strlen(http_scheme)))
-		return NULL;
-
-	q = url + strlen(http_scheme);
+	if (!memcmp(url, http_scheme, strlen(http_scheme))) {
+		q = url + strlen(http_scheme);
+	} else {
+		if (!memcmp(url, https_scheme, strlen(https_scheme))) {
+			q = url + strlen(https_scheme);
+		} else {
+			return NULL;
+		}
+	}
 
 	p = strchr(q, ':');
 	if (p) {                    /* if : is after the first /, we have looked too far ahead */
