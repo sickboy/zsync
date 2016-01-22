@@ -21,3 +21,15 @@ You do not have to install zsync if you are just trying it out, as both zsync an
 zsync history is kept in a git repository. You can get a copy of the history with:
 
 git clone http://zsync.moria.org.uk/zsync.git
+
+
+### To build
+
+(on cygwin for some reason must add #include <sys/select.h> before #include <sys/types.h> in include/curl/curl.h)
+
+aclocal
+autoheader
+automake --force-missing --add-missing
+autoconf
+./configure
+make
