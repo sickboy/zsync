@@ -1,0 +1,16 @@
+*.o
+*.Po
+*.exe
+*.a
+Makefile
+Makefile.in
+*.stackdump
+stamp-h1
+configure
+config.status
+*.log
+aclocal.m4
+autom4te.cache
+autotools
+config.h
+config.h.in
