@@ -94,6 +94,25 @@ void add_auth(char *host, char *user, char *pass) {
 }
 
 
+void add_by_old_host(char *hn, char *newhost) {
+  /* Find any relevant entry in the auth table */
+  int i;
+  for (i = 0; i < num_auth_details * 3; i += 3) {
+    if (!strcasecmp(auth_details[i], hn)) {
+      char *b;
+
+      /* We have found an entry in the auth details table for this
+      * hostname; get the user & pass to use */
+      char *u = auth_details[i + 1];
+      char *p = auth_details[i + 2];
+
+      add_auth(newhost, u, p);
+
+      break;
+    }
+  }
+}
+
 
 static char *get_auth_hdr(const char *hn) {
 	/* Find any relevant entry in the auth table */
@@ -905,7 +924,7 @@ int range_fetch_perform(struct range_fetch *rf, struct myprogress *prog) {
 	if (authhdr) {
 		curl_easy_setopt(rf->curl, CURLOPT_USERPWD, authhdr);
 	} else {
-    if (rf->original_url != rf->url) {
+    if (strcmp(rf->original_url,rf->url) != 0) {
   		get_http_host_port(rf->original_url, hostn, sizeof(hostn), &port);
   		authhdr = get_auth_hdr(hostn);
   		if (authhdr)

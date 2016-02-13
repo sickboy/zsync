@@ -4,8 +4,8 @@
  *   Copyright (C) 2004,2005,2009 Colin Phipps <cph@moria.org.uk>
  *
  *   This program is free software; you can redistribute it and/or modify
- *   it under the terms of the Artistic License v2 (see the accompanying 
- *   file COPYING for the full license terms), or, at your option, any later 
+ *   it under the terms of the Artistic License v2 (see the accompanying
+ *   file COPYING for the full license terms), or, at your option, any later
  *   version of the same license.
  *
  *   This program is distributed in the hope that it will be useful,
@@ -45,6 +45,8 @@ off_t range_fetch_bytes_down(const struct range_fetch* rf);
 void range_fetch_end(struct range_fetch* rf);
 
 void add_auth(char* host, char* user, char* pass);
+
+void add_by_old_host(char *host, char *newhost);
 
 /* base64.c */
 char* base64(const char*);
