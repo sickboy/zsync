@@ -4,8 +4,8 @@
  *   Copyright (C) 2004,2005,2007,2009 Colin Phipps <cph@moria.org.uk>
  *
  *   This program is free software; you can redistribute it and/or modify
- *   it under the terms of the Artistic License v2 (see the accompanying 
- *   file COPYING for the full license terms), or, at your option, any later 
+ *   it under the terms of the Artistic License v2 (see the accompanying
+ *   file COPYING for the full license terms), or, at your option, any later
  *   version of the same license.
  *
  *   This program is distributed in the hope that it will be useful,
@@ -27,7 +27,7 @@
  * of byte ranges at particular URLs to be retrieved by the HTTP code.
  *
  * It also handles:
- * - blocking edge cases (decompressed data not lining up with blocks for rcksum; 
+ * - blocking edge cases (decompressed data not lining up with blocks for rcksum;
  *   last block of the file only containing partial data)
  * - recompression of the compressed data at the end of the transfer;
  * - checksum verification of the entire output.
@@ -61,7 +61,7 @@
  * implemented SHA1 so this is it for now. */
 const char ckmeth_sha1[] = { "SHA-1" };
 
-/* List of options strings for gzip(1) allowed in the .zsync. This is 
+/* List of options strings for gzip(1) allowed in the .zsync. This is
  * security against someone specifying arbitrary commands. */
 static const char* const gzip_safe_option[] = {
     "--best",
@@ -114,6 +114,7 @@ struct zsync_state {
     char *gzhead;               /* And this is the header of the gzip file (for the mtime) */
 
     time_t mtime;               /* MTime: from the .zsync, or -1 */
+    char *authhdr;
 };
 
 static int zsync_read_blocksums(struct zsync_state *zs, FILE * f,
@@ -140,7 +141,7 @@ static char **append_ptrlist(int *n, char **p, char *a) {
 }
 
 /* Constructor */
-struct zsync_state *zsync_begin(FILE * f) {
+struct zsync_state *zsync_begin(FILE * f, char *authhdr) {
   int valid_length=0;
     /* Defaults for the checksum bytes and sequential matches properties of the
      * rcksum_state. These are the defaults from versions of zsync before these
@@ -158,6 +159,8 @@ struct zsync_state *zsync_begin(FILE * f) {
 
     if (!zs)
         return NULL;
+
+    zs->authhdr = authhdr;
 
     /* Any non-zero defaults here. */
     zs->mtime = -1;
@@ -332,7 +335,7 @@ struct zsync_state *zsync_begin(FILE * f) {
  * the per-block checksums of the target file and holds the local working copy
  * of the in-progress target. And it populates the per-block checksums from the
  * given file handle, which must be reading from the .zsync at the start of the
- * checksums. 
+ * checksums.
  * rsum_bytes, checksum_bytes, seq_matches are settings for the checksums,
  * passed through to the rcksum_state. */
 static int zsync_read_blocksums(struct zsync_state *zs, FILE * f,
@@ -370,7 +373,7 @@ static int zsync_read_blocksums(struct zsync_state *zs, FILE * f,
 }
 
 /* parse_822(buf[])
- * Parse an RFC822 date string. Returns a time_t, or -1 on failure. 
+ * Parse an RFC822 date string. Returns a time_t, or -1 on failure.
  * E.g. Tue, 25 Jul 2006 20:02:17 +0000
  */
 static time_t parse_822(const char* ts) {
@@ -788,7 +791,7 @@ char *zsync_end(struct zsync_state *zs) {
  * Rewrites the state in the given zlib stream object to be ready to decompress
  * data from the compressed version of this zsync stream at the given offset in
  * the compressed file. Returns the offset in the uncompressed stream that this
- * corresponds to in the 4th parameter. 
+ * corresponds to in the 4th parameter.
  */
 void zsync_configure_zstream_for_zdata(const struct zsync_state *zs,
                                        struct z_stream_s *zstrm,
@@ -841,6 +844,7 @@ struct zsync_receiver {
     int url_type;               /* Compressed or not */
     unsigned char *outbuf;      /* Working buffer to keep incomplete blocks of data */
     off_t outoffset;            /* and the position in that buffer */
+    char *authhdr;
 };
 
 /* Constructor */
@@ -850,6 +854,8 @@ struct zsync_receiver *zsync_begin_receive(struct zsync_state *zs, int url_type)
     if (!zr)
         return NULL;
     zr->zs = zs;
+
+    zr->authhdr = zs->authhdr;
 
     zr->outbuf = malloc(zs->blocksize);
     if (!zr->outbuf) {
@@ -1010,7 +1016,7 @@ static int zsync_receive_data_compressed(struct zsync_receiver *zr,
 }
 
 /* zsync_receive_data(self, buf[], offset, buflen)
- * Passes data received from the source URL at the given offset; 
+ * Passes data received from the source URL at the given offset;
  * data is buflen bytes in buf[].
  * Returns 0 unless there's an error (e.g. the submitted data doesn't match the
  * expected checksum for the corresponding blocks)
