@@ -95,18 +95,18 @@ void add_auth(char *host, char *user, char *pass) {
 
 
 void add_by_old_host(char *hn, char *newhost) {
+  //fprintf(stdout, "$$ adding by old host: %s -> %s\n",hn,newhost);
   /* Find any relevant entry in the auth table */
   int i;
   for (i = 0; i < num_auth_details * 3; i += 3) {
     if (!strcasecmp(auth_details[i], hn)) {
-      char *b;
-
       /* We have found an entry in the auth details table for this
       * hostname; get the user & pass to use */
       char *u = auth_details[i + 1];
       char *p = auth_details[i + 2];
 
-      add_auth(newhost, u, p);
+      //fprintf(stdout, "$$ added by old host: %s -> %s\n",hn,newhost);
+      add_auth(strdup(newhost), strdup(u), strdup(p));
 
       break;
     }
@@ -311,8 +311,11 @@ FILE *http_get(const char *orig_url, char **track_referer, const char *tfname) {
 
 	get_http_host_port(orig_url, hostn, sizeof(hostn), &port);
 	authhdr = get_auth_hdr(hostn);
-	if (authhdr)
+  //fprintf(stdout, "$$ looking for auth details for: %s\n",hostn);
+	if (authhdr) {
+    //fprintf(stdout, "$$ found auth details, setting header\n");
 		curl_easy_setopt( curl, CURLOPT_USERPWD, authhdr );
+  }
 
 	struct progress p = { 0, 0, 0, 0 };
 
@@ -921,13 +924,17 @@ int range_fetch_perform(struct range_fetch *rf, struct myprogress *prog) {
 
 	get_http_host_port(rf->url, hostn, sizeof(hostn), &port);
 	authhdr = get_auth_hdr(hostn);
+  //fprintf(stdout, "$$ looking for range auth details for: %s\n",hostn);
 	if (authhdr) {
+    //fprintf(stdout, "$$ found auth details for range, setting header\n");
 		curl_easy_setopt(rf->curl, CURLOPT_USERPWD, authhdr);
 	} else {
     if (strcmp(rf->original_url,rf->url) != 0) {
   		get_http_host_port(rf->original_url, hostn, sizeof(hostn), &port);
+      //fprintf(stdout, "$$ looking for range auth details for: %s\n",hostn);
   		authhdr = get_auth_hdr(hostn);
   		if (authhdr)
+        //fprintf(stdout, "$$ found auth details for range, setting header\n");
   			curl_easy_setopt(rf->curl, CURLOPT_USERPWD, authhdr);
       }
 	}
@@ -986,6 +993,20 @@ int range_fetch_perform(struct range_fetch *rf, struct myprogress *prog) {
             }
 
             p = strdup(redirurl);
+
+            //fprintf(stdout, "$$ was redirected to: %s\n",p);
+            if (strcmp(p, rf->url) != 0) {
+              char *port;
+              char hostn[256];
+              get_http_host_port(p, hostn, sizeof(hostn), &port);
+
+              char *port2;
+              char hostn2[256];
+              get_http_host_port(rf->url, hostn2, sizeof(hostn2), &port2);
+              if (get_auth_hdr(hostn) == NULL) {
+                add_by_old_host(hostn2, hostn);
+              }
+            }
 
             /* Remember the redirected URL for the next request */
             res = curl_easy_setopt( rf->curl, CURLOPT_URL, p );
