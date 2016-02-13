@@ -200,9 +200,7 @@ struct zsync_state *read_zsync_control_file(const char *p, const char *fn) {
           char *port2;
           char hostn2[256];
           get_http_host_port(p, hostn2, sizeof(hostn2), &port2);
-          if (get_auth_hdr(hostn) == NULL) {
-            add_by_old_host(hostn2, hostn);
-          }
+          add_by_old_host(hostn2, hostn);
         }
     }
 

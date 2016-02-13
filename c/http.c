@@ -94,26 +94,6 @@ void add_auth(char *host, char *user, char *pass) {
 }
 
 
-void add_by_old_host(char *hn, char *newhost) {
-  //fprintf(stdout, "$$ adding by old host: %s -> %s\n",hn,newhost);
-  /* Find any relevant entry in the auth table */
-  int i;
-  for (i = 0; i < num_auth_details * 3; i += 3) {
-    if (!strcasecmp(auth_details[i], hn)) {
-      /* We have found an entry in the auth details table for this
-      * hostname; get the user & pass to use */
-      char *u = auth_details[i + 1];
-      char *p = auth_details[i + 2];
-
-      //fprintf(stdout, "$$ added by old host: %s -> %s\n",hn,newhost);
-      add_auth(strdup(newhost), strdup(u), strdup(p));
-
-      break;
-    }
-  }
-}
-
-
 static char *get_auth_hdr(const char *hn) {
 	/* Find any relevant entry in the auth table */
 	int i;
@@ -134,6 +114,29 @@ static char *get_auth_hdr(const char *hn) {
 		}
 	}
 	return NULL;
+}
+
+void add_by_old_host(char *hn, char *newhost) {
+  if (get_auth_hdr(newhost) != NULL) {
+    return;
+  }
+
+  //fprintf(stdout, "$$ adding by old host: %s -> %s\n",hn,newhost);
+  /* Find any relevant entry in the auth table */
+  int i;
+  for (i = 0; i < num_auth_details * 3; i += 3) {
+    if (!strcasecmp(auth_details[i], hn)) {
+      /* We have found an entry in the auth details table for this
+      * hostname; get the user & pass to use */
+      char *u = auth_details[i + 1];
+      char *p = auth_details[i + 2];
+
+      //fprintf(stdout, "$$ added by old host: %s -> %s\n",hn,newhost);
+      add_auth(strdup(newhost), strdup(u), strdup(p));
+
+      break;
+    }
+  }
 }
 
 /* Get a curl easy handle based on our global options. Returns NULL on failure */
@@ -1003,9 +1006,7 @@ int range_fetch_perform(struct range_fetch *rf, struct myprogress *prog) {
               char *port2;
               char hostn2[256];
               get_http_host_port(rf->url, hostn2, sizeof(hostn2), &port2);
-              if (get_auth_hdr(hostn) == NULL) {
-                add_by_old_host(hostn2, hostn);
-              }
+              add_by_old_host(hostn2, hostn);
             }
 
             /* Remember the redirected URL for the next request */
