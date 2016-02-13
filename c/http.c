@@ -4,8 +4,8 @@
  *   Copyright (C) 2004,2005,2007,2009 Colin Phipps <cph@moria.org.uk>
  *
  *   This program is free software; you can redistribute it and/or modify
- *   it under the terms of the Artistic License v2 (see the accompanying 
- *   file COPYING for the full license terms), or, at your option, any later 
+ *   it under the terms of the Artistic License v2 (see the accompanying
+ *   file COPYING for the full license terms), or, at your option, any later
  *   version of the same license.
  *
  *   This program is distributed in the hope that it will be useful,
@@ -141,6 +141,9 @@ CURL *make_curl_handle() {
     /* We'd like to follow redirects */
     curl_easy_setopt( curl, CURLOPT_FOLLOWLOCATION, 1 );
 
+    /* We'd also like auth options to be passed along... */
+    curl_easy_setopt( curl, CURLOPT_UNRESTRICTED_AUTH, 1 );
+
     /* Set a User-Agent string */
     curl_easy_setopt( curl, CURLOPT_USERAGENT, "zsync/" VERSION );
 
@@ -196,7 +199,7 @@ CURL *make_curl_handle() {
             fprintf(stderr, "--interface: %s\n", curl_easy_strerror(res));
         }
     }
-   
+
     /* Requires CURL ver 7.21.3 or newer. */
     /* Equiv of --resolve in curl */
     if(resolve_host) {
@@ -256,7 +259,7 @@ int parse_content_range( char *buf, size_t len, off_t *from, off_t *to ) {
  *
  * XXX: When tfname is set, non-curl version downloaded into a ".part" file and
  *      then rename(1)ed
- * XXX: When tfname is set, non-curl version used If-Modified-Since, 
+ * XXX: When tfname is set, non-curl version used If-Modified-Since,
  *      If-Unmodified-Since, and Range to resume transfers on the .part file
  * XXX: Non-curl version had a progress meter
  */
@@ -762,7 +765,7 @@ struct range_fetch *range_fetch_start(const char *orig_url, struct zsync_receive
 
     /* Copy url into a new string */
     rf->url = strdup(orig_url);
-	rf->original_url = strdup(orig_url);
+    rf->original_url = strdup(orig_url);
 
     curl_easy_setopt( rf->curl, CURLOPT_URL, rf->url );
     curl_easy_setopt( rf->curl, CURLOPT_HEADERFUNCTION, range_fetch_read_http_headers );
@@ -902,10 +905,12 @@ int range_fetch_perform(struct range_fetch *rf, struct myprogress *prog) {
 	if (authhdr) {
 		curl_easy_setopt(rf->curl, CURLOPT_USERPWD, authhdr);
 	} else {
-		get_http_host_port(rf->original_url, hostn, sizeof(hostn), &port);
-		authhdr = get_auth_hdr(hostn);
-		if (authhdr)
-			curl_easy_setopt(rf->curl, CURLOPT_USERPWD, authhdr);
+    if (rf->original_url != rf->url) {
+  		get_http_host_port(rf->original_url, hostn, sizeof(hostn), &port);
+  		authhdr = get_auth_hdr(hostn);
+  		if (authhdr)
+  			curl_easy_setopt(rf->curl, CURLOPT_USERPWD, authhdr);
+      }
 	}
 
 	res = curl_easy_perform( rf->curl );
