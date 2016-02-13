@@ -4,8 +4,8 @@
  *   Copyright (C) 2004,2005,2009 Colin Phipps <cph@moria.org.uk>
  *
  *   This program is free software; you can redistribute it and/or modify
- *   it under the terms of the Artistic License v2 (see the accompanying
- *   file COPYING for the full license terms), or, at your option, any later
+ *   it under the terms of the Artistic License v2 (see the accompanying 
+ *   file COPYING for the full license terms), or, at your option, any later 
  *   version of the same license.
  *
  *   This program is distributed in the hope that it will be useful,
@@ -28,7 +28,7 @@ extern int be_insecure;
 extern int be_verbose;
 extern long use_timeout;
 
-FILE* http_get(const char *orig_url, char **track_referer, const char *tfname, char **authhdr);
+FILE* http_get(const char *orig_url, char **track_referer, const char *tfname);
 
 struct range_fetch;
 

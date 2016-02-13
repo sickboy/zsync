@@ -263,12 +263,13 @@ int parse_content_range( char *buf, size_t len, off_t *from, off_t *to ) {
  *      If-Unmodified-Since, and Range to resume transfers on the .part file
  * XXX: Non-curl version had a progress meter
  */
-FILE *http_get(const char *orig_url, char **track_referer, const char *tfname, char **authhdr) {
+FILE *http_get(const char *orig_url, char **track_referer, const char *tfname) {
     FILE *f;
     CURL *curl;
     CURLcode res;
     long response_code;
     char *effective_url;
+	char *authhdr = NULL;
 	char *port;
 	char hostn[256];
 
@@ -290,7 +291,7 @@ FILE *http_get(const char *orig_url, char **track_referer, const char *tfname, c
     curl_easy_setopt( curl, CURLOPT_WRITEDATA, f );
 
 	get_http_host_port(orig_url, hostn, sizeof(hostn), &port);
-	*authhdr = get_auth_hdr(hostn);
+	authhdr = get_auth_hdr(hostn);
 	if (authhdr)
 		curl_easy_setopt( curl, CURLOPT_USERPWD, authhdr );
 
@@ -386,6 +387,9 @@ struct range_fetch {
     CURL *curl;     /* Currently open curl handle to the server, or NULL */
     char *url;      /* URL we're telling curl to use.
                        Must be kept around after passing it to curl_easy_setopt */
+	char *original_url;      /* URL we're telling curl to use.
+					Must be kept around after passing it to curl_easy_setopt */
+
     /* zsync_receiver struct that will receive data we get from the remote */
     struct zsync_receiver *zr;
 
@@ -408,7 +412,6 @@ struct range_fetch {
     int nranges;
     int rangessent;     /* We've requested the first rangessent ranges from the remote */
     int rangesdone;     /* and received this many */
-    char *authhdr;
 };
 
 /* range_fetch methods */
@@ -762,6 +765,7 @@ struct range_fetch *range_fetch_start(const char *orig_url, struct zsync_receive
 
     /* Copy url into a new string */
     rf->url = strdup(orig_url);
+    rf->original_url = strdup(orig_url);
 
     curl_easy_setopt( rf->curl, CURLOPT_URL, rf->url );
     curl_easy_setopt( rf->curl, CURLOPT_HEADERFUNCTION, range_fetch_read_http_headers );
@@ -820,6 +824,7 @@ void range_fetch_end(struct range_fetch *rf) {
     free(rf->ranges_todo);
     free(rf->boundary);
     free(rf->url);
+	free(rf->original_url);
     free(rf);
 }
 
@@ -900,10 +905,12 @@ int range_fetch_perform(struct range_fetch *rf, struct myprogress *prog) {
 	if (authhdr) {
 		curl_easy_setopt(rf->curl, CURLOPT_USERPWD, authhdr);
 	} else {
-    authhdr = rf->authhdr;
-    if (authhdr) {
-  		curl_easy_setopt(rf->curl, CURLOPT_USERPWD, authhdr);
-    }
+    if (rf->original_url != rf->url) {
+  		get_http_host_port(rf->original_url, hostn, sizeof(hostn), &port);
+  		authhdr = get_auth_hdr(hostn);
+  		if (authhdr)
+  			curl_easy_setopt(rf->curl, CURLOPT_USERPWD, authhdr);
+      }
 	}
 
 	res = curl_easy_perform( rf->curl );
