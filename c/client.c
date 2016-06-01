@@ -475,7 +475,7 @@ int main(int argc, char **argv) {
             switch (opt) {
             case 'A':           /* Authentication options for remote server */
                 {               /* Scan string as hostname=username:password */
-                    char *p = strdup(optarg);
+                    char *p = optarg;
                     char *q = strchr(p, '=');
                     char *r = q ? strchr(q, ':') : NULL;
 
@@ -492,11 +492,11 @@ int main(int argc, char **argv) {
                 break;
             case 'k':
                 free(zfname);
-                zfname = strdup(optarg);
+                zfname = optarg;
                 break;
             case 'o':
                 free(filename);
-                filename = strdup(optarg);
+                filename = optarg;
                 break;
             case 'i':
                 seedfiles = append_ptrlist(&nseedfiles, seedfiles, optarg);
@@ -514,11 +514,11 @@ int main(int argc, char **argv) {
                 be_verbose = 1;
                 break;
             case 'u':
-                referer = strdup(optarg);
+                referer = optarg;
                 break;
             case 'C':
                 /* CA Cert path */
-                cacert = strdup(optarg);
+                cacert = optarg;
                 break;
             case 'K':
                 /* Insecure (disable SSL host/peer verification) */
@@ -526,11 +526,11 @@ int main(int argc, char **argv) {
                 break;
             case 'R':
                 /* SSL certificate path */
-                sslcert = strdup(optarg);
+                sslcert = optarg;
                 break;
             case 'S':
                 /* SSL private key path */
-                sslkey = strdup(optarg);
+                sslkey = optarg;
                 break;
             case 'T':
                 /* Timeout */
@@ -547,11 +547,11 @@ int main(int argc, char **argv) {
                 break;
             case 'I':
                 /* Interface */
-                want_interface = strdup(optarg);
+                want_interface = optarg;
                 break;
             case 'H':
                 /* Resolve Host */
-                resolve_host = strdup(optarg);
+                resolve_host = optarg;
                 break;
             }
         }
@@ -601,6 +601,8 @@ int main(int argc, char **argv) {
     temp_file = malloc(strlen(filename) + 6);
     strcpy(temp_file, filename);
     strcat(temp_file, ".part");
+
+    //fprintf(stderr, "temp %s file %s\n", temp_file, filename);
 
     /* Bail out for 0 length files */
     if (! zsync_filelen(zs)) {
@@ -672,7 +674,7 @@ int main(int argc, char **argv) {
      * from the old .part). */
     if (zsync_rename_file(zs, temp_file) != 0) {
         perror("rename");
-        exit(1);
+        exit(21);
     }
 
     /* STEP 3: fetch remaining blocks via the URLs from the .zsync */
@@ -738,6 +740,7 @@ int main(int argc, char **argv) {
                         "Unable to back up old file %s - completed download left in %s\n",
                         filename, temp_file);
                 ok = 0;         /* Prevent overwrite of old file below */
+	        exit(21);
             }
         }
         if (ok) {
@@ -749,8 +752,9 @@ int main(int argc, char **argv) {
             else {
                 perror("rename");
                 fprintf(stderr,
-                        "Unable to back up old file %s - completed download left in %s\n",
+                        "Unable to rename temp file %s - completed download left in %s\n",
                         filename, temp_file);
+	              exit(21);
             }
         }
         free(oldfile_backup);
