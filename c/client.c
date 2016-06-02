@@ -475,7 +475,7 @@ int main(int argc, char **argv) {
             switch (opt) {
             case 'A':           /* Authentication options for remote server */
                 {               /* Scan string as hostname=username:password */
-                    char *p = optarg;
+                    char *p = strdup(optarg);
                     char *q = strchr(p, '=');
                     char *r = q ? strchr(q, ':') : NULL;
 
